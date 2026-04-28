@@ -6,20 +6,30 @@ import google.generativeai as genai
 st.set_page_config(page_title="AI 聚合实验室", page_icon="🚀", layout="wide")
 st.title("🚀 我的 AI 聚合助手")
 
-# --- 修改后的侧边栏 Key 获取逻辑 ---
+# --- 侧边栏：门禁与配置 ---
 with st.sidebar:
     st.header("⚙️ 配置中心")
-    model_choice = st.selectbox("选择当前大脑：", ["DeepSeek V4 Pro", "Gemini 1.5 Flash"])
-    st.divider()
     
-    # 尝试从云端保险柜(Secrets)获取 Key
-    if model_choice == "DeepSeek V4 Pro":
-        # 优先用云端 Secrets，没有再用输入框
-        api_key = st.secrets.get("DEEPSEEK_API_KEY") or st.text_input("填入 DeepSeek API 密钥", type="password")
-        st.info("模式：逻辑深度推理专家")
+    # 1. 门禁系统：询问访问码
+    user_access_code = st.text_input("🔑 输入访问码以激活内置 Key", type="password")
+    
+    st.divider()
+    model_choice = st.selectbox("选择当前大脑：", ["DeepSeek V4 Pro", "Gemini 1.5 Flash"])
+    
+    # 2. 逻辑判断：
+    # 如果用户输入的访问码对上了，就偷偷从保险柜拿 Key
+    # 如果没对上，就依然让用户自己填他自己的 Key
+    if user_access_code == st.secrets.get("ACCESS_CODE"):
+        st.success("✅ 访问码正确，已激活内置密钥")
+        if model_choice == "DeepSeek V4 Pro":
+            api_key = st.secrets.get("DEEPSEEK_API_KEY")
+        else:
+            api_key = st.secrets.get("GEMINI_API_KEY")
     else:
-        api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("填入 Gemini API 密钥", type="password")
-        st.info("模式：创意与超长上下文专家")
+        # 没暗号？那就得自备 Key
+        if user_access_code != "":
+            st.error("❌ 访问码错误")
+        api_key = st.text_input(f"填入个人 {model_choice} 密钥", type="password")
 
     # --- 这里就是新增的“永久保存”功能区 ---
     st.divider()
