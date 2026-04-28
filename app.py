@@ -84,11 +84,21 @@ if prompt := st.chat_input("向选中的 AI 提问..."):
                         status.update(label="思考完毕！", state="complete", expanded=False)
                     answer = full_response
                 else:
+                    # Gemini 的“显微镜”调试模式
                     genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                    
+                    # 打印一下目前所有可用的模型名字，看看 2026 年它到底叫什么
+                    models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                    st.write("你目前可以使用的模型列表：", models)
+                    
+                    # 尝试用列表里的第一个模型（通常是最稳的那个）
+                    target_model = models[0] if models else 'gemini-1.5-flash'
+                    model = genai.GenerativeModel(target_model)
+                    
+                    # 剩下的聊天逻辑保持不变...
                     history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                     chat = model.start_chat(history=history)
-                    with st.spinner("Gemini 正在响应..."):
+                    with st.spinner(f"正在通过 {target_model} 响应..."):
                         response = chat.send_message(prompt)
                         answer = response.text
                     st.markdown(answer)
