@@ -30,7 +30,22 @@ with st.sidebar:
         if user_access_code != "":
             st.error("❌ 访问码错误")
         api_key = st.text_input(f"填入个人 {model_choice} 密钥", type="password")
-
+# --- 新增：导入历史记录功能 ---
+    st.divider()
+    st.subheader("📂 导入记忆")
+    uploaded_file = st.file_uploader("上传之前的 .md 记录文件", type="md")
+    
+    if uploaded_file is not None:
+        # 读取上传的文件内容
+        content = uploaded_file.getvalue().decode("utf-8")
+        if st.button("🧠 恢复这段记忆"):
+            # 这里可以编写复杂的解析逻辑，或者简单地把内容发给 AI
+            st.session_state.messages.append({
+                "role": "user", 
+                "content": f"这是我上传的历史记录，请阅读并帮我继续：\n\n{content}"
+            })
+            st.success("记录已加载！请在对话框发送‘继续’开始。")
+            st.rerun()
     # --- 这里就是新增的“永久保存”功能区 ---
     st.divider()
     st.subheader("💾 对话管理")
