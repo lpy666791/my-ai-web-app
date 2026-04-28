@@ -41,10 +41,10 @@ with st.sidebar:
     
     # --- 关键：在这里安全地获取 API Key ---
     if model_choice == "DeepSeek V4 Pro":
-        api_key = st.text_input("填入 DeepSeek API 密钥", type="password", key="ds_key")
+        api_key = st.text_input("sk-cb075231f2964b5bb3fe46c0b35e18e9", type="password", key="ds_key")
         st.info("模式：逻辑深度推理专家")
     else:
-        api_key = st.text_input("填入 Gemini API 密钥", type="password", key="gm_key")
+        api_key = st.text_input("AIzaSyDmksXP5lkkJYgKSKw-7VnaOvmRQQa4-Jw", type="password", key="gm_key")
         st.info("模式：创意与超长上下文专家")
 
 # 3. 初始化记忆
