@@ -14,7 +14,7 @@ with st.sidebar:
     user_access_code = st.text_input("🔑 输入访问码以激活内置 Key", type="password")
     
     st.divider()
-    model_choice = st.selectbox("选择当前大脑：", ["DeepSeek V4 Pro", "Gemini 1.5 Flash"])
+    model_choice = st.selectbox("选择当前大脑：", ["DeepSeek V4 Pro", "Gemini 2.5 Flash"])
     
     # 2. 逻辑判断：
     # 如果用户输入的访问码对上了，就偷偷从保险柜拿 Key
