@@ -85,7 +85,7 @@ if prompt := st.chat_input("向选中的 AI 提问..."):
                     answer = full_response
                 else:
                     genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
                     history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                     chat = model.start_chat(history=history)
                     with st.spinner("Gemini 正在响应..."):
