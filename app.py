@@ -10,7 +10,6 @@ st.title("🚀 我的 AI 聚合助手")
 with st.sidebar:
     st.header("⚙️ 配置中心")
     
-    # 模型选择开关
     model_choice = st.selectbox(
         "选择当前大脑：",
         ["DeepSeek V4 Pro", "Gemini 1.5 Flash"]
@@ -18,13 +17,13 @@ with st.sidebar:
     
     st.divider()
     
-    # 根据选择显示对应的 Key 输入框
+    # --- 关键：在这里安全地获取 API Key ---
     if model_choice == "DeepSeek V4 Pro":
-        api_key = st.text_input("sk-64966fb1158541b6a85f3fd3f954fc93", type="password")
-        st.info("当前模式：逻辑深度推理专家")
+        api_key = st.text_input("填入 DeepSeek API 密钥", type="password", key="ds_key")
+        st.info("模式：逻辑深度推理专家")
     else:
-        api_key = st.text_input("AIzaSyDmksXP5lkkJYgKSKw-7VnaOvmRQQa4-Jw", type="password")
-        st.info("当前模式：创意、超长上下文专家")
+        api_key = st.text_input("填入 Gemini API 密钥", type="password", key="gm_key")
+        st.info("模式：创意与超长上下文专家")
 
 # 3. 初始化记忆
 if "messages" not in st.session_state:
@@ -45,28 +44,35 @@ if prompt := st.chat_input("向选中的 AI 提问..."):
     else:
         try:
             with st.chat_message("assistant"):
-                # --- 分支处理：DeepSeek ---
                 if model_choice == "DeepSeek V4 Pro":
                     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-                    with st.status("DeepSeek 正在思考逻辑..."):
+                    
+                    # 开启流式输出，解决“思考后消失”的问题
+                    with st.status("DeepSeek 正在深度思考...", expanded=True) as status:
                         response = client.chat.completions.create(
                             model="deepseek-v4-pro",
                             messages=st.session_state.messages,
+                            stream=True,
                             reasoning_effort="high",
                             extra_body={"thinking": {"type": "enabled"}}
                         )
-                        answer = response.choices[0].message.content
-                    st.markdown(answer)
+                        
+                        placeholder = st.empty()
+                        full_response = ""
+                        for chunk in response:
+                            if chunk.choices[0].delta.content:
+                                full_response += chunk.choices[0].delta.content
+                                placeholder.markdown(full_response)
+                        status.update(label="思考完毕！", state="complete", expanded=False)
+                    answer = full_response
                 
-                # --- 分支处理：Gemini ---
                 else:
+                    # Gemini 的调用逻辑（保持不变）
                     genai.configure(api_key=api_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
-                    # 转换格式以适配 Gemini
                     history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                     chat = model.start_chat(history=history)
-                    
-                    with st.spinner("Gemini 正在迸发灵感..."):
+                    with st.spinner("Gemini 正在响应..."):
                         response = chat.send_message(prompt)
                         answer = response.text
                     st.markdown(answer)
