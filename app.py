@@ -9,7 +9,29 @@ st.title("🚀 我的 AI 聚合助手")
 # 2. 侧边栏：配置中心
 with st.sidebar:
     st.header("⚙️ 配置中心")
+    # --- 永久保存对话的功能区 ---
+    st.divider()
+    st.subheader("💾 对话管理")
     
+    if st.session_state.messages:
+        # 1. 转换对话格式为 Markdown 文本
+        chat_text = "# AI 聚合助手对话记录\n\n"
+        for m in st.session_state.messages:
+            role = "用户" if m["role"] == "user" else "AI"
+            chat_text += f"### {role}:\n{m['content']}\n\n---\n\n"
+        
+        # 2. 导出按钮：点击后会将文件下载到你的电脑里
+        st.download_button(
+            label="📥 导出对话记录 (Markdown)",
+            data=chat_text,
+            file_name="ai_chat_history.md",
+            mime="text/markdown"
+        )
+        
+        # 3. 清空对话按钮
+        if st.button("🗑️ 清空当前对话"):
+            st.session_state.messages = []
+            st.rerun()
     model_choice = st.selectbox(
         "选择当前大脑：",
         ["DeepSeek V4 Pro", "Gemini 1.5 Flash"]
