@@ -116,7 +116,7 @@ with st.sidebar:
     # 4. 记忆导入与清空
     st.subheader("📂 记忆管理")
     # --- 新增：记忆容量监控表盘 ---
-    msg_count = len(st.session_state.messages)
+    msg_count = len(st.session_state.sessions[st.session_state.current_session])
     st.metric(label="🧠 当前记忆负载", value=f"{msg_count} 条交互")
     
     if msg_count > 30:
@@ -173,7 +173,7 @@ with st.sidebar:
 # 第四部分：主界面对话展示
 # ==========================================
 # 渲染历史记录（跳过隐藏的工具调用记录）
-for msg in st.session_state.messages:
+for msg in st.session_state.sessions[st.session_state.current_session]:
     if msg["role"] == "tool": 
         continue # 不单独显示工具返回的枯燥数据
     
@@ -197,7 +197,7 @@ prompt = st.chat_input("向选中的 AI 提问...")
 
 if prompt:
     # 1. 存入用户消息
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.sessions[st.session_state.current_session].append(...)
     save_data()
     
     with st.chat_message("user"):
@@ -227,7 +227,7 @@ if prompt:
                         api_messages.append({"role": "system", "content": system_prompt})
                         
                     # 2. 滑动窗口：只取最近的 20 条，防止撑爆
-                    recent_history = st.session_state.messages[-20:]
+                    recent_history = st.session_state.sessions[st.session_state.current_session][-20:]
                     api_messages.extend(recent_history)
                     
                     # 按照官方要求发送请求 (注意这里 messages 换成了 api_messages)
