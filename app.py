@@ -110,6 +110,13 @@ with st.sidebar:
     
     # 4. 记忆导入与清空
     st.subheader("📂 记忆管理")
+    # --- 新增：记忆容量监控表盘 ---
+    msg_count = len(st.session_state.messages)
+    st.metric(label="🧠 当前记忆负载", value=f"{msg_count} 条交互")
+    
+    if msg_count > 30:
+        st.warning("⚠️ 记忆包有点沉了！为节省 Token 并保持 AI 反应速度，建议点击下方按钮清空不必要的对话。")
+        
     if st.button("🗑️ 清空当前对话"):
         st.session_state.messages = []
         save_data()
