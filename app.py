@@ -141,6 +141,21 @@ with st.sidebar:
         height=100
     )
 
+    # ================= 临时救援计划 =================
+    st.divider()
+    if os.path.exists("chat_cache.json"):
+        with open("chat_cache.json", "r", encoding="utf-8") as f:
+            old_memory = f.read()
+        st.download_button(
+            label="🆘 点击下载之前的旧记忆",
+            data=old_memory,
+            file_name="我的旧对话存档.json",
+            mime="application/json"
+        )
+    else:
+        st.caption("旧记忆文件已不在当前服务器硬盘中。")
+    # ===============================================
+
 # ==========================================
 # 第四部分：主界面渲染 (针对当前选中的频道)
 # ==========================================
