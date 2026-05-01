@@ -133,22 +133,7 @@ with st.sidebar:
     current_chat = st.session_state.sessions[st.session_state.current_session]
     st.metric(label="🧠 当前频道记忆负载", value=f"{len(current_chat)} 条交互")
 
-    if st.button("➕ 新建独立对话"):
-        new_name = f"对话 {len(st.session_state.sessions) + 1}"
-        st.session_state.sessions[new_name] = []
-        st.session_state.current_session = new_name
-        save_data()
-        st.rerun()
 
-    session_list = list(st.session_state.sessions.keys())
-    selected_session = st.radio(
-        "切换频道：", 
-        session_list, 
-        index=session_list.index(st.session_state.current_session)
-    )
-    if selected_session != st.session_state.current_session:
-        st.session_state.current_session = selected_session
-        st.rerun()
 
     if st.button("➕ 新建独立对话"):
             # 1. 智能寻找当前所有频道里最大的数字，绝对不重名
