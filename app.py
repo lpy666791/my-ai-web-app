@@ -1,9 +1,11 @@
 import streamlit as st
 import google.generativeai as genai
 from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 import json
 import os
 from datetime import datetime
+import supabase
 
 # ==========================================
 # 第一部分：定义 AI 工具箱 (Function Calling)
@@ -18,6 +20,8 @@ TOOL_CALL_MAP = {
     "get_date": get_date_mock,
     "get_weather": get_weather_mock
 }
+
+
 
 my_tools = [
     {
@@ -44,6 +48,49 @@ my_tools = [
         }
     },
 ]
+
+
+# （上面是你截图里的 my_tools = [...]）
+
+# ==========================================
+# 第二部分：记忆外脑 (RAG) 初始化与核心函数
+# ==========================================
+
+# 1. 初始化本地向量模型 (第一次运行会自动下载)
+# 💡建议加个 Streamlit 缓存装饰器，避免每次刷新网页都重新加载模型，导致卡顿
+@st.cache_resource 
+def load_embedder():
+    return SentenceTransformer('all-MiniLM-L6-v2')
+
+embedder = load_embedder()
+
+# 2. 初始化 Supabase 数据库客户端
+# 确保你的 st.secrets 里有这两个配置
+db = supabase.create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
+# 3. 存储设定的函数
+def add_lore_to_db(category: str, content: str):
+    vector = embedder.encode(content).tolist()
+    db.table("novel_lore").insert({
+        "category": category,
+        "content": content,
+        "embedding": vector
+    }).execute()
+
+# 4. 检索设定的函数
+def retrieve_relevant_lore(user_query: str):
+    query_vector = embedder.encode(user_query).tolist()
+    response = db.rpc("match_lore", {
+        "query_embedding": query_vector,
+        "match_threshold": 0.5, 
+        "match_count": 3
+    }).execute()
+    return "\n".join([item["content"] for item in response.data])
+
+# ==========================================
+# 第三部分：Streamlit UI 界面与交互逻辑
+# ==========================================
+# （下面紧接着写你的 st.title, st.sidebar, 还有聊天框的代码）
 
 
 # ==========================================
@@ -158,6 +205,26 @@ with st.sidebar:
             
             save_data()
             st.rerun()
+
+            # === 👇 在这里新增 RAG 的输入界面 👇 ===
+    
+    st.divider() # 加一条华丽的分割线，和上面的频道管理隔开
+    st.markdown("### 🧠 注入世界观设定")
+    
+    lore_category = st.selectbox("设定分类", ["人物小传", "世界背景", "魔法/科技体系"])
+    lore_content = st.text_area("设定内容", placeholder="例如：林克，18岁，左手持剑...")
+    
+    if st.button("💾 存入记忆外脑"):
+        if lore_content:
+            with st.spinner("正在转化为向量并写入云端..."):
+                add_lore_to_db(lore_category, lore_content) # 调用你刚才写在上面的函数
+            st.success("存入成功！AI 已经记住了。")
+        else:
+            st.warning("请先填写设定内容！")
+            
+    # === 👆 新增结束 👆 ===
+
+    
             # === 👇把下面这段丢失的代码贴在新建按钮逻辑的下方 👇 ===
     
     st.markdown("切换频道：")
@@ -216,7 +283,7 @@ with st.sidebar:
             else:
                 st.error("⚠️ 频道名字已存在，请换一个！")
 
-                
+
 
     st.divider()
     
