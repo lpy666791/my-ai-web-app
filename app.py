@@ -165,16 +165,29 @@ if prompt:
                 
                 # 开始自动循环（处理多次工具调用）
                 while True:
-                    # 按照官方要求发送请求
+                    # ... 之前的请求代码 ...
                     response = client.chat.completions.create(
-                        model="deepseek-chat", # 请根据实际权限确认模型名称是否为 deepseek-v4-pro
+                        model="deepseek-chat", 
                         messages=st.session_state.messages,
                         tools=my_tools,
-                        # reasoning_effort="high", # 如果报错不支持该参数，可将此行注释掉
-                        # extra_body={"thinking": {"type": "enabled"}} # 如果使用非 r1/pro 模型，注释掉此行
                     )
                     
                     choice = response.choices[0].message
+
+                    # --- 新增：提取并展示缓存命中率（省钱雷达） ---
+                    if hasattr(response, 'usage') and response.usage:
+                        # 安全地获取这两个字段（如果库版本较旧，可能需要用 getattr）
+                        hit_tokens = getattr(response.usage, 'prompt_cache_hit_tokens', 0)
+                        miss_tokens = getattr(response.usage, 'prompt_cache_miss_tokens', 0)
+                        
+                        if hit_tokens > 0:
+                            total = hit_tokens + miss_tokens
+                            hit_rate = (hit_tokens / total) * 100 if total > 0 else 0
+                            # 在网页右下角弹出一个不打扰的小提示
+                            st.toast(f"⚡ 硬盘缓存命中: {hit_tokens} tokens (命中率 {hit_rate:.1f}%)", icon="🚀")
+                    # --------------------------------------------
+
+                    # ... 接下来的提取 tool_calls_data 和保存 msg_dict 的代码保持不变 ...
                     
                     # 提取并格式化工具调用信息，以确保 JSON 可以保存
                     tool_calls_data = None
