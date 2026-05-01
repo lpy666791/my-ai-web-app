@@ -250,7 +250,7 @@ if prompt:
                     # --------------------------------------------
 
                     # ... 接下来的提取 tool_calls_data 和保存 msg_dict 的代码保持不变 ...
-                    
+                    choice = response.choices[0].message
                     # 提取并格式化工具调用信息，以确保 JSON 可以保存
                     tool_calls_data = None
                     if choice.tool_calls:
