@@ -224,7 +224,7 @@ with st.sidebar:
             
     # === 👆 新增结束 👆 ===
 
-    
+
             # === 👇把下面这段丢失的代码贴在新建按钮逻辑的下方 👇 ===
     
     st.markdown("切换频道：")
@@ -290,7 +290,7 @@ with st.sidebar:
     st.subheader("🎭 角色设定 (System)")
     system_prompt = st.text_area(
         "告诉 AI 它是谁：", 
-        value="你是一个精通全栈开发、熟练使用 Unity 引擎的资深架构师，回答要求严谨、专业。",
+        value="你能帮我解梦吗，假设我们现在在我的梦境中，这里与现实无关",
         height=100
     )
 
@@ -339,6 +339,16 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
 
+        # --- 新增检索逻辑 ---
+        with st.spinner("🔍 正在翻阅世界观设定..."):
+            relevant_lore = retrieve_relevant_lore(prompt)
+        
+        # 构造增强版的系统提示词（不要直接改 system_prompt 变量，防止逻辑混乱）
+        combined_system = system_prompt
+        if relevant_lore:
+            combined_system += f"\n\n【相关世界观设定（必须遵守）】:\n{relevant_lore}"
+        # -------------------
+
     with st.chat_message("assistant"):
         if model_choice == "DeepSeek V4 Pro":
             if not ds_key:
@@ -353,7 +363,8 @@ if prompt:
                 while True:
                     api_messages = []
                     if system_prompt:
-                        api_messages.append({"role": "system", "content": system_prompt})
+                        # 👇 将这里原本的 system_prompt 改为 combined_system
+                        api_messages.append({"role": "system", "content": combined_system})
                     recent_history = current_chat[-20:] 
                     api_messages.extend(recent_history)
 
@@ -415,7 +426,8 @@ if prompt:
                 st.stop()
                 
             genai.configure(api_key=gm_key)
-            model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=system_prompt)
+            # 👇 将这里原本的 system_prompt 改为 combined_system
+            model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=combined_system)
             
             gemini_history = []
             for m in current_chat[:-1]:
