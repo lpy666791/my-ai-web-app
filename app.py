@@ -45,37 +45,62 @@ my_tools = [
     },
 ]
 
+
 # ==========================================
-# 第二部分：系统配置与【多会话防弹】存储引擎
+
+# 第二部分：系统配置与【Supabase 云端】存储引擎
 # ==========================================
+from supabase import create_client, Client
+
 st.set_page_config(page_title="多频道 AI 聚合助手", page_icon="🚀", layout="wide")
-st.title("🚀 多频道 AI 聚合助手")
+st.title("🚀 云端多频道 AI 聚合助手")
 
-DB_FILE = "chat_sessions.json"
+# 1. 连接 Supabase 云端数据库
+@st.cache_resource
+def init_connection():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
 
+supabase: Client = init_connection()
+
+# 我们给你的专属存档起个唯一的 ID
+USER_RECORD_ID = "master_admin_record"
+
+# 2. 云端存盘函数 (替代原来的本地写文件)
 def save_data():
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.sessions, f, ensure_ascii=False, indent=2)
+    # 使用 upsert：如果存在就更新，如果不存在就插入
+    data = {
+        "id": USER_RECORD_ID, 
+        "chat_data": st.session_state.sessions
+    }
+    supabase.table("ai_sessions").upsert(data).execute()
 
-# 1. 初始化多频道数据结构（加入了容错机制，防止文件损坏导致死机）
+# 3. 初始化云端读取记忆 (替代原来的本地读文件)
 if "sessions" not in st.session_state:
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r", encoding="utf-8") as f:
-                st.session_state.sessions = json.load(f)
-        except json.JSONDecodeError:
-            # 💡 核心修复：如果文件因之前的报错损坏或为空，直接重置！
+    try:
+        # 尝试从云端拉取你的数据
+        response = supabase.table("ai_sessions").select("chat_data").eq("id", USER_RECORD_ID).execute()
+        
+        # 如果云端有数据，直接加载
+        if response.data and response.data[0].get("chat_data"):
+            st.session_state.sessions = response.data[0]["chat_data"]
+        else:
+            # 云端完全没数据，初始化新字典并立即同步到云端
             st.session_state.sessions = {"默认对话 1": []}
-    else:
+            save_data()
+    except Exception as e:
+        st.error(f"连接云端数据库失败，正在使用临时内存。错误信息: {e}")
         st.session_state.sessions = {"默认对话 1": []}
 
-# 2. 追踪当前所在的频道
+# 4. 追踪当前所在的频道
 if "current_session" not in st.session_state:
-    # 确保至少有一个频道存在
     if not st.session_state.sessions:
         st.session_state.sessions = {"默认对话 1": []}
     st.session_state.current_session = list(st.session_state.sessions.keys())[0]
 
+# ==========================================
+# (接下来的第三部分侧边栏 UI，完全不需要改动！)
 # ==========================================
 # 第三部分：侧边栏 UI (频道管理、门禁、角色设定)
 # ==========================================
