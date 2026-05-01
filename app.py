@@ -58,8 +58,9 @@ st.title("🚀 云端多频道 AI 聚合助手")
 # 1. 连接 Supabase 云端数据库
 @st.cache_resource
 def init_connection():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    # .strip() 会帮你删掉不小心复制进去的空格或换行
+    url = st.secrets["SUPABASE_URL"].strip()
+    key = st.secrets["SUPABASE_KEY"].strip()
     return create_client(url, key)
 
 supabase: Client = init_connection()
