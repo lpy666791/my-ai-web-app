@@ -158,6 +158,39 @@ with st.sidebar:
             
             save_data()
             st.rerun()
+            # === 👇把下面这段丢失的代码贴在新建按钮逻辑的下方 👇 ===
+    
+    st.markdown("切换频道：")
+    
+    # 渲染单选框来切换对话
+    channel_list = list(st.session_state.sessions.keys())
+    # 确保当前 session 在列表中，防止报错
+    if st.session_state.current_session not in channel_list:
+        st.session_state.current_session = channel_list[0]
+        
+    selected_session = st.radio(
+        "选择频道", 
+        channel_list, 
+        index=channel_list.index(st.session_state.current_session),
+        label_visibility="collapsed"
+    )
+    
+    # 如果用户点击了其他频道，触发切换
+    if selected_session != st.session_state.current_session:
+        st.session_state.current_session = selected_session
+        st.rerun()
+
+    # 恢复丢失的删除按钮
+    if st.button("🗑️ 删除当前频道"):
+        if len(st.session_state.sessions) > 1:
+            del st.session_state.sessions[st.session_state.current_session]
+            st.session_state.current_session = list(st.session_state.sessions.keys())[0]
+            save_data()
+            st.rerun()
+        else:
+            st.warning("至少保留一个频道哦！")
+            
+    # === 👆 补救代码结束 👆 ===
 
     st.divider()
     
