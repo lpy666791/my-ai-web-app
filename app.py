@@ -102,6 +102,7 @@ if "current_session" not in st.session_state:
 
 # ==========================================
 # (接下来的第三部分侧边栏 UI，完全不需要改动！)
+
 # ==========================================
 # 第三部分：侧边栏 UI (频道管理、门禁、角色设定)
 # ==========================================
@@ -149,14 +150,29 @@ with st.sidebar:
         st.session_state.current_session = selected_session
         st.rerun()
 
-    if st.button("🗑️ 删除当前频道"):
-        if len(st.session_state.sessions) > 1:
-            del st.session_state.sessions[st.session_state.current_session]
-            st.session_state.current_session = list(st.session_state.sessions.keys())[0]
-        else:
-            st.session_state.sessions[st.session_state.current_session] = []
-        save_data()
-        st.rerun()
+    if st.button("➕ 新建独立对话"):
+            # 1. 智能寻找当前所有频道里最大的数字，绝对不重名
+            max_num = 0
+            for name in st.session_state.sessions.keys():
+                if name.startswith("对话 "):
+                    try:
+                        num = int(name.replace("对话 ", ""))
+                        if num > max_num:
+                            max_num = num
+                    except:
+                        pass
+            
+            # 2. 生成绝对安全的新名字
+            new_name = f"对话 {max_num + 1}" if max_num > 0 else f"对话 {len(st.session_state.sessions) + 1}"
+            
+            # 3. 创建新字典触发更新，防止旧状态粘连
+            new_sessions = dict(st.session_state.sessions)
+            new_sessions[new_name] = []
+            st.session_state.sessions = new_sessions
+            st.session_state.current_session = new_name
+            
+            save_data()
+            st.rerun()
 
     st.divider()
     
