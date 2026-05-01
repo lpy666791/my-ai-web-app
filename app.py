@@ -191,6 +191,32 @@ with st.sidebar:
             st.warning("至少保留一个频道哦！")
             
     # === 👆 补救代码结束 👆 ===
+    # === 在删除按钮代码的下方，加上这段重命名逻辑 ===
+    
+    st.divider() # 加一条华丽的分割线
+    
+    # 重命名 UI
+    new_channel_name = st.text_input("✏️ 重命名当前频道", value=st.session_state.current_session, max_chars=20)
+    
+    if st.button("💾 保存新名称"):
+        # 确保新名字不为空，且和现在的不一样
+        if new_channel_name and new_channel_name != st.session_state.current_session:
+            # 确保不和现有的其他频道重名
+            if new_channel_name not in st.session_state.sessions:
+                # 核心操作：把旧名字的数据“连根拔起”，赋给新名字
+                chat_history = st.session_state.sessions.pop(st.session_state.current_session)
+                st.session_state.sessions[new_channel_name] = chat_history
+                
+                # 告诉系统，现在焦点转移到新名字上了
+                st.session_state.current_session = new_channel_name
+                
+                # 存入云端数据库并刷新界面
+                save_data()
+                st.rerun()
+            else:
+                st.error("⚠️ 频道名字已存在，请换一个！")
+
+                
 
     st.divider()
     
