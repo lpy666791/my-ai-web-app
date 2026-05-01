@@ -46,28 +46,34 @@ my_tools = [
 ]
 
 # ==========================================
-# 第二部分：系统配置与【多会话】本地存储引擎
+# 第二部分：系统配置与【多会话防弹】存储引擎
 # ==========================================
 st.set_page_config(page_title="多频道 AI 聚合助手", page_icon="🚀", layout="wide")
 st.title("🚀 多频道 AI 聚合助手")
 
-# 升级后的数据库文件名
 DB_FILE = "chat_sessions.json"
 
 def save_data():
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.sessions, f, ensure_ascii=False, indent=2)
 
-# 1. 初始化多频道数据结构
+# 1. 初始化多频道数据结构（加入了容错机制，防止文件损坏导致死机）
 if "sessions" not in st.session_state:
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            st.session_state.sessions = json.load(f)
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                st.session_state.sessions = json.load(f)
+        except json.JSONDecodeError:
+            # 💡 核心修复：如果文件因之前的报错损坏或为空，直接重置！
+            st.session_state.sessions = {"默认对话 1": []}
     else:
         st.session_state.sessions = {"默认对话 1": []}
 
 # 2. 追踪当前所在的频道
 if "current_session" not in st.session_state:
+    # 确保至少有一个频道存在
+    if not st.session_state.sessions:
+        st.session_state.sessions = {"默认对话 1": []}
     st.session_state.current_session = list(st.session_state.sessions.keys())[0]
 
 # ==========================================
@@ -76,7 +82,6 @@ if "current_session" not in st.session_state:
 with st.sidebar:
     st.header("⚙️ 聚合配置中心")
     
-    # 门禁系统
     user_access_code = st.text_input("🔑 输入访问码激活内置 Key", type="password")
     
     if user_access_code == st.secrets.get("ACCESS_CODE", "") and user_access_code != "":
@@ -91,16 +96,13 @@ with st.sidebar:
 
     st.divider()
     
-    # 模型切换
     model_choice = st.selectbox("选择当前大脑：", ["DeepSeek V4 Pro", "Gemini 2.5 Flash"])
     st.session_state.current_model = model_choice
 
     st.divider()
 
-    # --- 强大的多频道会话管理器 ---
     st.subheader("💬 会话频道管理")
     
-    # 当前记忆容量监控
     current_chat = st.session_state.sessions[st.session_state.current_session]
     st.metric(label="🧠 当前频道记忆负载", value=f"{len(current_chat)} 条交互")
 
@@ -132,7 +134,6 @@ with st.sidebar:
 
     st.divider()
     
-    # 动态系统提示词
     st.subheader("🎭 角色设定 (System)")
     system_prompt = st.text_area(
         "告诉 AI 它是谁：", 
@@ -147,7 +148,7 @@ current_chat = st.session_state.sessions[st.session_state.current_session]
 
 for msg in current_chat:
     if msg["role"] == "tool": 
-        continue # 隐藏枯燥的工具后台数据
+        continue 
         
     with st.chat_message(msg["role"]):
         if msg.get("reasoning_content"):
@@ -160,19 +161,17 @@ for msg in current_chat:
                 st.info(f"🔧 系统调用了工具：{t['function']['name']}")
 
 # ==========================================
-# 第五部分：核心调度引擎 (完美序列化防报错版)
+# 第五部分：核心调度引擎 
 # ==========================================
 prompt = st.chat_input(f"在 {st.session_state.current_session} 中提问...")
 
 if prompt:
-    # 存入当前频道
     current_chat.append({"role": "user", "content": prompt})
     save_data()
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # ------------ DeepSeek 引擎 ------------
         if model_choice == "DeepSeek V4 Pro":
             if not ds_key:
                 st.warning("⚠️ 请输入 DeepSeek 密钥！")
@@ -184,11 +183,10 @@ if prompt:
                 final_answer = ""
                 
                 while True:
-                    # 拼装带缓存滑动窗口的消息包
                     api_messages = []
                     if system_prompt:
                         api_messages.append({"role": "system", "content": system_prompt})
-                    recent_history = current_chat[-20:] # 只发最近20条防撑爆
+                    recent_history = current_chat[-20:] 
                     api_messages.extend(recent_history)
 
                     response = client.chat.completions.create(
@@ -199,7 +197,6 @@ if prompt:
                     
                     choice = response.choices[0].message
                     
-                    # 💡 安全序列化字典 (彻底解决 JSON 报错)
                     msg_to_save = {
                         "role": "assistant",
                         "content": choice.content if choice.content else ""
@@ -220,11 +217,9 @@ if prompt:
                                 }
                             })
 
-                    # 无损存入当前频道
                     current_chat.append(msg_to_save)
                     save_data()
 
-                    # 处理工具调用循环
                     if not choice.tool_calls:
                         final_answer = choice.content
                         break
@@ -236,7 +231,6 @@ if prompt:
                         
                         tool_result = TOOL_CALL_MAP[tool_name](**tool_args)
                         
-                        # 返回结果必须转为纯字符串
                         current_chat.append({
                             "role": "tool",
                             "tool_call_id": tool.id,
@@ -247,7 +241,6 @@ if prompt:
                 status.update(label="处理完毕！", state="complete", expanded=False)
             st.markdown(final_answer)
 
-        # ------------ Gemini 引擎 ------------
         else:
             if not gm_key:
                 st.warning("⚠️ 请输入 Gemini 密钥！")
