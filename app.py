@@ -82,8 +82,8 @@ def retrieve_relevant_lore(user_query: str):
     query_vector = embedder.encode(user_query).tolist()
     response = db.rpc("match_lore", {
         "query_embedding": query_vector,
-        "match_threshold": 0.5, 
-        "match_count": 3
+        "match_threshold": 0.3, 
+        "match_count": 1000
     }).execute()
     return "\n".join([item["content"] for item in response.data])
 
