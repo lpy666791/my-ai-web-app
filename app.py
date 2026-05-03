@@ -87,6 +87,12 @@ def retrieve_relevant_lore(user_query: str):
     }).execute()
     return "\n".join([item["content"] for item in response.data])
 
+with st.spinner("🔍 正在翻阅世界观设定..."):
+            relevant_lore = retrieve_relevant_lore(prompt)
+            
+            # 👇 加入这一行神级 Debug 代码！
+            st.info(f"【开发者后台视角】本次从数据库捞出来的设定是：\n {relevant_lore}")
+
 # ==========================================
 # 第三部分：Streamlit UI 界面与交互逻辑
 # ==========================================
