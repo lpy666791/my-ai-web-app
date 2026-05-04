@@ -372,8 +372,16 @@ if prompt:
                     recent_history = current_chat[-20:] 
                     api_messages.extend(recent_history)
 
+                                # 1. 先根据侧边栏的选择，确定真实的 API 模型名称
+                    # （这里的具体字符串取决于你购买 API 的平台的官方文档，通常就是面板上显示的英文名）
+                    if model_choice == "DeepSeek V4 Pro":
+                        api_model_name = "deepseek-v4-pro"  # 填入平台要求的 Pro 模型代码
+                    else:
+                        api_model_name = "deepseek-v4-flash" 
+
+                    # 2. 发起调用时，传入这个动态变量
                     response = client.chat.completions.create(
-                        model="deepseek-chat",
+                        model=api_model_name,  # 👈 不要再写死成带引号的字符串了，传变量进去
                         messages=api_messages,
                         tools=my_tools,
                     )
