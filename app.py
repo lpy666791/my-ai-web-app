@@ -344,9 +344,7 @@ if prompt:
         # --- 新增检索逻辑 ---
         with st.spinner("🔍 正在翻阅世界观设定..."):
             relevant_lore = retrieve_relevant_lore(prompt)
-             # 终极 Debug 代码
-            st.info(f"【开发者后台视角】本次捞出来的设定：\n {relevant_lore}")
-
+   
         # ==========================================
             
         # 构造增强版的系统提示词（不要直接改 system_prompt 变量，防止逻辑混乱）
